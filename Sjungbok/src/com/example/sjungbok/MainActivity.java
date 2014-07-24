@@ -1,15 +1,20 @@
 package com.example.sjungbok;
 
-import android.os.Bundle;
 import android.app.Activity;
+import android.content.Context;
+import android.os.Bundle;
 import android.view.Menu;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
-
+	DownloadListener downloadListener;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		TextView textView = (TextView)findViewById(R.id.SongView);
+		Context context = this;
+		downloadListener = new DownloadListener(textView,context);
 	}
 
 	@Override
