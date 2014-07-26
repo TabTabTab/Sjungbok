@@ -67,8 +67,11 @@ public class Downloader extends AsyncTask<Void, String, String>{
 	}
 	private String getCorrectSwedishLetters(String text){
 		text=text.replace("&aring;", "å");
+		text=text.replace("&Aring;", "Å");
 		text=text.replace("&auml;", "ä");
+		text=text.replace("&Auml;", "Ä");
 		text=text.replace("&ouml;", "ö");
+		text=text.replace("&Ouml;", "Ö");
 		return text;
 	}
 	private String getMelody(Document doc){
@@ -81,9 +84,11 @@ public class Downloader extends AsyncTask<Void, String, String>{
 		child.html(child.html().replaceAll("(?i)<br[^>]*>", "br2n"));
 		if(child.text().contains("Direktlänk till ljudfilen")){
 			melodiString = child.text().substring(0, child.text().indexOf("Direktlänk till ljudfilen."));	
+			melodiString=getCorrectSwedishLetters(melodiString);
 		}
 		else{
 			melodiString = child.text();
+			melodiString=getCorrectSwedishLetters(melodiString);
 		}
 		
 		
@@ -91,9 +96,6 @@ public class Downloader extends AsyncTask<Void, String, String>{
 	}
 	private String getLyric(Document doc){
 		Element lyrics=doc.getElementById("lyrics");
-		if(lyrics==null){
-			System.out.println("NULL ");
-		}
 		lyrics.html(lyrics.html().replaceAll("(?i)<br[^>]*>", "br2n"));
 		String lyricText=lyrics.text().replaceAll("br2n", "\n");
 
@@ -102,8 +104,11 @@ public class Downloader extends AsyncTask<Void, String, String>{
 		for(int j=0;j<lyricsLines.length;j++){
 			lyricText=lyricText+lyricsLines[j].trim()+"\n";
 		}
+		lyricText=getCorrectSwedishLetters(lyricText);
 		return lyricText;
 	}
+	
+	
 	@Override
 	protected String doInBackground(Void... params) {
 
@@ -134,13 +139,23 @@ public class Downloader extends AsyncTask<Void, String, String>{
 
 
 		for(int i=0; i<songLinkList.size();i++){
-
+			
 			doc=getDocument(songLinkList.get(i),res.cookies());
+			
 
+			
+			
+			
+			
+			
+			
+			
+	
 			String melody=getMelody(doc);
 			melodies.add(melody);
 			String lyric=getLyric(doc);
 			lyrics.add(lyric);
+
 
 		}
 		if(titles.size()!=melodies.size()||titles.size()!=lyrics.size()){
