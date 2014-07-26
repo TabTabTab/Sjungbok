@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.jsoup.Connection;
+import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.Connection.Method;
 import org.jsoup.nodes.Document;
@@ -19,7 +20,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 
-public class Downloader extends AsyncTask<String, Void, String>{
+public class Downloader extends AsyncTask<Void, String, String>{
 	ProgressDialog progressDialog;
 	Context context;
 	private AsyncTaskCompleteListener<String> callback;
@@ -36,20 +37,8 @@ public class Downloader extends AsyncTask<String, Void, String>{
 		progressDialog = ProgressDialog.show(context, "Hämtar Musiken","", true);          
 	}; 
 
-	@Override
-	protected String doInBackground(String... params) {
-		
-		
-		
-		String titel = "";
-		String melodi1="";
-		String text="";
-		boolean firstTitle=true;
-		boolean firstMelody=true;
-		boolean firstLyrics=true;
-		
-		ArrayList<String> songLinkList= new ArrayList();
-		Document doc = null;
+
+	private Response login(){
 		Connection.Response res = null;
 		try {
 			res = Jsoup.connect("http://www.dsek.se/navigation/login.php")
@@ -59,22 +48,78 @@ public class Downloader extends AsyncTask<String, Void, String>{
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-
-
-
-
+		return res;
+	}
+	private Document getDocument(String url,Map<String, String> cookies ){
+		Document doc=null;
 		try {		
-			Map<String, String> cookies = res.cookies();
-			Connection connection = Jsoup.connect("http://www.dsek.se/arkiv/sanger/index.php?showAll");
+
+			Connection connection = Jsoup.connect(url);
 			for (Map.Entry<String, String> cookie : cookies.entrySet()) {
 				connection.cookie(cookie.getKey(), cookie.getValue());     
 			}
 			doc = connection.get();
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return doc;
+	}
+	private String getCorrectSwedishLetters(String text){
+		text=text.replace("&aring;", "å");
+		text=text.replace("&auml;", "ä");
+		text=text.replace("&ouml;", "ö");
+		return text;
+	}
+	private String getMelody(Document doc){
+		Elements melodier=doc.getElementsContainingOwnText("Melodi");
+		Element melodi=melodier.get(0);
+		Element parent = melodi.parent();
+		Element child=parent.child(1);
+		String melodiString="";
+
+		child.html(child.html().replaceAll("(?i)<br[^>]*>", "br2n"));
+		if(child.text().contains("Direktlänk till ljudfilen")){
+			melodiString = child.text().substring(0, child.text().indexOf("Direktlänk till ljudfilen."));	
+		}
+		else{
+			melodiString = child.text();
+		}
+		
+		
+		return melodiString;
+	}
+	private String getLyric(Document doc){
+		Element lyrics=doc.getElementById("lyrics");
+		if(lyrics==null){
+			System.out.println("NULL ");
+		}
+		lyrics.html(lyrics.html().replaceAll("(?i)<br[^>]*>", "br2n"));
+		String lyricText=lyrics.text().replaceAll("br2n", "\n");
+
+		String[] lyricsLines=lyricText.split("\n");
+		lyricText="";
+		for(int j=0;j<lyricsLines.length;j++){
+			lyricText=lyricText+lyricsLines[j].trim()+"\n";
+		}
+		return lyricText;
+	}
+	@Override
+	protected String doInBackground(Void... params) {
+
+
+
+		ArrayList<String> songLinkList= new ArrayList<String>();
+		ArrayList<String> titles= new ArrayList<String>();
+		ArrayList<String> melodies= new ArrayList<String>();
+		ArrayList<String> lyrics= new ArrayList<String>();
+
+		Document doc = null;
+		Connection.Response res = login();
+		doc=getDocument("http://www.dsek.se/arkiv/sanger/index.php?showAll",res.cookies());
+
+
+
 		Element tableWithSongs=doc.getElementById("innerMainTable");
 		Elements links = tableWithSongs.select("a[href]");
 
@@ -83,81 +128,39 @@ public class Downloader extends AsyncTask<String, Void, String>{
 		while(itr.hasNext()){
 			Element element = itr.next();
 			songLinkList.add(element.attr("abs:href"));
-			String title=element.html();
-			title=title.replace("&aring;", "å");
-			title=title.replace("&auml;", "ä");
-			title=title.replace("&ouml;", "ö");
-			if(firstTitle){
-				titel=title;
-				firstTitle=false;
-			}
+			titles.add(getCorrectSwedishLetters(element.html()));
+
 		}
 
 
 		for(int i=0; i<songLinkList.size();i++){
-			try {
-				Map<String, String> cookies = res.cookies();
-				Connection connection = Jsoup.connect(songLinkList.get(i));
-				for (Map.Entry<String, String> cookie : cookies.entrySet()) {
-					connection.cookie(cookie.getKey(), cookie.getValue());     
-				}
-				doc = connection.get();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 
-			Elements melodier=doc.getElementsContainingOwnText("Melodi");
-			Element melodi=melodier.get(0);
-			Element parent = melodi.parent();
-			Element child=parent.child(1);
-			String melodiString="";
+			doc=getDocument(songLinkList.get(i),res.cookies());
 
-			child.html(child.html().replaceAll("(?i)<br[^>]*>", "br2n"));
-			if(child.text().contains("Direktlänk till ljudfilen")){
-				melodiString = child.text().substring(0, child.text().indexOf("Direktlänk till ljudfilen."));	
-			}
-			else{
-				melodiString = child.text();
-			}
-			if(firstMelody){
-				melodi1=melodiString;
-				firstMelody=false;
-			}
-			
-			Element lyrics=doc.getElementById("lyrics");
-			lyrics.html(lyrics.html().replaceAll("(?i)<br[^>]*>", "br2n"));
+			String melody=getMelody(doc);
+			melodies.add(melody);
+			String lyric=getLyric(doc);
+			lyrics.add(lyric);
 
-			//hämta som innerhtml istället för att få med formatering?
-			String lyricText=lyrics.text().replaceAll("br2n", "\n");
-
-			String[] lyricsLines=lyricText.split("\n");
-			lyricText="";
-			for(int j=0;j<lyricsLines.length;j++){
-				lyricText=lyricText+lyricsLines[j].trim()+"\n";
-			}
-			if(firstLyrics){
-				firstLyrics=false;
-				text=lyricText;
-			}
-			String result=titel+"\n\n"+melodi1+"\n\n"+text;
-			return result;
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		if(titles.size()!=melodies.size()||titles.size()!=lyrics.size()){
+			System.out.println("something wrooooong");
+		}
+		String result="";
+		for(int i=0;i<titles.size();i++){
+			result=result+"<title>"+titles.get(i)+"</title>"+"\n";
+			result=result+"<melody>"+melodies.get(i)+"</melody>"+"\n";
+			result=result+"<lyric>"+lyrics.get(i)+"</lyrics>"+"\n";
+		}
 
-		return null;
+
+
+		return result;
 	}
 	@Override
-	protected void onPostExecute(String song) {
-		 progressDialog.dismiss();
-		 callback.onTaskComplete(song);
+	protected void onPostExecute(String result) {
+		progressDialog.dismiss();
+		callback.onTaskComplete(result);
 	}
 
 }
