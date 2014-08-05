@@ -5,6 +5,7 @@ package com.example.sjungbok;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -23,8 +24,10 @@ import android.os.AsyncTask;
 public class Downloader extends AsyncTask<Void, String, String>{
 	ProgressDialog progressDialog;
 	Context context;
+	HashSet existingSongs;
 	private AsyncTaskCompleteListener<String> callback;
-	public Downloader(Context context,AsyncTaskCompleteListener<String> callback){
+	public Downloader(HashSet existingSongs,Context context,AsyncTaskCompleteListener<String> callback){
+		this.existingSongs=existingSongs;
 		this.context=context;
 		this.callback=callback;
 	}
@@ -72,6 +75,16 @@ public class Downloader extends AsyncTask<Void, String, String>{
 		text=text.replace("&Auml;", "Ä");
 		text=text.replace("&ouml;", "ö");
 		text=text.replace("&Ouml;", "Ö");
+		text=text.replaceAll("&#8221;", "\"");
+		text=text.replaceAll("&#180;", "'");
+		text=text.replaceAll("&#8217;", "’");
+		text=text.replace("&#8230;", "...");
+		text=text.replace("&#8220;", "\"");
+		text=text.replace("&#8221;", "\"");
+		text=text.replace("&#65533;", "e");
+		
+		
+		
 		return text;
 	}
 	private String getMelody(Document doc){
@@ -132,25 +145,19 @@ public class Downloader extends AsyncTask<Void, String, String>{
 		Iterator<Element> itr = links.iterator();
 		while(itr.hasNext()){
 			Element element = itr.next();
+			
+			
+			if(!existingSongs.contains(getCorrectSwedishLetters(element.text()))){
+			
 			songLinkList.add(element.attr("abs:href"));
 			titles.add(getCorrectSwedishLetters(element.html()));
-
+			}
 		}
-
+		
 
 		for(int i=0; i<songLinkList.size();i++){
 			
 			doc=getDocument(songLinkList.get(i),res.cookies());
-			
-
-			
-			
-			
-			
-			
-			
-			
-	
 			String melody=getMelody(doc);
 			melodies.add(melody);
 			String lyric=getLyric(doc);
@@ -163,9 +170,9 @@ public class Downloader extends AsyncTask<Void, String, String>{
 		}
 		String result="";
 		for(int i=0;i<titles.size();i++){
-			result=result+"<title>"+titles.get(i)+"</title>"+"\n";
-			result=result+"<melody>"+melodies.get(i)+"</melody>"+"\n";
-			result=result+"<lyric>"+lyrics.get(i)+"</lyrics>"+"\n";
+			result=result+"<title>\n"+titles.get(i)+"\n</title>"+"\n";
+			result=result+"<melody>\n"+melodies.get(i)+"\n</melody>"+"\n";
+			result=result+"<lyrics>\n"+lyrics.get(i)+"\n</lyrics>"+"\n";
 		}
 
 
