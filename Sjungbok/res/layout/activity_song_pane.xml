@@ -7,25 +7,19 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity" >
+    tools:context=".SongPane" >
 
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:scrollbars="vertical" >
 
-
-        <ListView
-            android:id="@+id/SongView"
+        <TextView
+            android:id="@+id/songTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="" />
-  
-
-    <Button
-        android:id="@+id/button1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="36dp"
-        android:layout_marginLeft="90dp"
-        android:onClick="updateSongs"
-        android:text="update" />
+    </ScrollView>
 
 </RelativeLayout>

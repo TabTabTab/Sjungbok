@@ -4,5 +4,6 @@
     <string name="app_name">Sjungbok</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="title_activity_song_pane">SongPane</string>
 
 </resources>
