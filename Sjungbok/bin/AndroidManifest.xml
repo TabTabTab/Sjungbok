@@ -31,6 +31,10 @@
             android:name="com.example.sjungbok.SongPane"
             android:label="@string/title_activity_song_pane" >
         </activity>
+        <activity
+            android:name="com.example.sjungbok.SearchActivity"
+            android:label="@string/title_activity_search" >
+        </activity>
     </application>
 
 </manifest>

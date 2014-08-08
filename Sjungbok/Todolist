@@ -1,7 +1,7 @@
 
 möjlighet att hämta sånger igen (med eller utan sitt dsek login (även möjlighet att spara sitt dsek login)
-visa alla sångerna i en lista (sortering på olika sätt?) (sorterade på namn-bokstavordning, melodi-bokstavsording, senast-inlagda? (finns ett inskickt fält i html:en)
-Sök funktion (sök på namn, melodi, text) exakt matchning och annan ranking. Googla hur man bygger sökning (tokenizing?)
+visa alla sångerna i en lista (sortering på olika sätt?) (sorterade på namn-bokstavordning, melodi-bokstavsording, senast-inlagda? (finns ett inskickt fält i html:en) (när vi visar alla sångerna i en lista vill vi ha streck mellan dem?)
+Sök funktion (sök på namn, melodi, text) exakt matchning och annan ranking. Googla hur man bygger sökning (tokenizing?) (fuzzy string matching) levenstheinDistance är nog the way to go (commons.apache har en sån metod)dela med antalet ord i texten också?
 fixa ett favorit system?
 
 
@@ -9,7 +9,6 @@ fixa ett favorit system?
 Behöver nog ha en fil med sånger från början då det tar oehört med tid att hämta alla sånger.
 (testa även: få flera trådar att köra samtidigt, hand parse:a sidorna istället för jsoup)
 
-Om man har en fil med sånger så blir det färre att hämta och laddningstiden blir inte helt absurd när man laddaer ner sånger
 
 Automatiskt nedladdning av nya sånger. (en gång i veckan?)
 Bygga med fragments? (bygga först med Activity sen fragment
@@ -19,11 +18,11 @@ Fixa nerladdning av ändrade sånger
 Ha sångerna sorterade i titelordning på fil
 egen textfil för låtar markerade som favorites
 
-Hur representera sångerna? med HTML? annat sett?
+
 
 Tänker 4 "sidor" som man byter med en sån sidmeny som i nolleappen (eller topmeny men troligare sidmeny)
 1) sök
-2) lista
+2) lista (hur ska man välja hur man vill sortera dem?)
 3) senaste visade sången
 4) favoriter
 

@@ -14,7 +14,12 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.TreeMap;
 
 import android.app.Activity;
 import android.content.Context;
@@ -39,27 +44,81 @@ public class MainActivity extends Activity {
 	ListView listView;
 	HashSet<String> existingSongs;
 	ArrayList<Song> songList;
+	static ArrayList<Song> allSongsList;
+	//SongListWrapper songListWrapper;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		//textView = (TextView)findViewById(R.id.SongView);
-//		Scroller scroller = new Scroller(this);
-//		scroller.setFriction(1000);
-//		textView.setScroller(scroller);
-		existingSongs = new HashSet<String>();
-		listView = (ListView)findViewById(R.id.SongView);
-
-		if(!checkIfSongFileExists()){
-			copyInitialSongFile();
-
-		}
-		populateSongListFromFile();
-		downloadSongs();		
+		//		Scroller scroller = new Scroller(this);
+		//		scroller.setFriction(1000);
+		//		textView.setScroller(scroller);
+		//		existingSongs = new HashSet<String>();
+		//		listView = (ListView)findViewById(R.id.SongView);
+		//
+		//		if(!checkIfSongFileExists()){
+		//			copyInitialSongFile();
+		//
+		//		}
+		//		populateSongListFromFile();
+		//		downloadSongs();		
 
 
 
 	}
+	protected void onResume()
+	{
+		super.onResume();
+
+		existingSongs = new HashSet<String>();
+		listView = (ListView)findViewById(R.id.SongView);
+		Intent intent = getIntent();
+		String title;
+		String melody;
+		String lyric;
+		title=intent.getStringExtra("title");
+		melody=intent.getStringExtra("melody");
+		lyric=intent.getStringExtra("lyrics");
+		if(title==null&&melody==null&&lyric==null){
+			if(!checkIfSongFileExists()){
+				copyInitialSongFile();
+
+			}
+			populateSongListFromFile();
+			downloadSongs();
+		}
+		else{
+			//genomför en sökning
+			String searchString;
+			boolean titleSearch=false;
+			boolean lyricsSearch=false;
+			if(title!=null){
+				searchString=title;
+				titleSearch=true;
+			}
+			else if(melody!=null){
+				searchString=melody;
+			}
+			else{
+				searchString=lyric;
+				lyricsSearch=true;
+			}
+			System.out.println(searchString);
+			String[] array=searchString.split(" ");
+			ArrayList<String> searchStringSplitted=new ArrayList<String>(Arrays.asList(array));
+			searchSongs2(searchStringSplitted,titleSearch,lyricsSearch);
+			
+			
+			
+			
+			
+			
+			
+			//populateListView();
+		}
+	}
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -95,11 +154,98 @@ public class MainActivity extends Activity {
 			e.printStackTrace();
 		}
 	}
-	public void updateSongs(View v) {
-		populateSongListFromFile();
+	public void searchSongs(View v) {
+		Intent intent = new Intent(this, SearchActivity.class);		
+		startActivity(intent);
+		
+		
+		
+		
+		
+	}
+	public void searchSongs2(ArrayList<String> searchString,boolean titleSearch,boolean lyricsSearch) {			
+		ArrayList<SongAndMatching> songWithMatching = new ArrayList<SongAndMatching>();
+		ArrayList<SongAndMatching> songWithMatchingFullMatch = new ArrayList<SongAndMatching>();
+
+
+
+		//bara lägga in de i sökresultaten om de matchar alla orden? (kanske bara lägga in de som matchar alla orden om det finns någon sån match? annars ta del matcher?)
+		int score;
+		boolean fullMatch=false;
+		for(int i=0;i<allSongsList.size();i++){
+			if(titleSearch){
+				score=Search.SimpleSearchFuzzy(searchString, allSongsList.get(i).titleAsArrayList());
+			}
+			else if(lyricsSearch){
+				score=Search.SimpleSearchFuzzy(searchString, allSongsList.get(i).textAsArrayList());
+			}
+			else{
+				score=Search.SimpleSearchFuzzy(searchString, allSongsList.get(i).melodyAsArrayList());
+			}
+			
+			
+			if(score==allSongsList.get(i).titleAsArrayList().size()&&titleSearch&&allSongsList.get(i).titleAsArrayList().size()==searchString.size()){
+				System.out.println(searchString.size());
+				System.out.println(allSongsList.get(i).titleAsArrayList().size());
+				Intent intent = new Intent(this, SongPane.class);
+				intent.putExtra("Song", allSongsList.get(i));
+				startActivity(intent);
+				return;
+			}
+			if(score==searchString.size()){
+				songWithMatchingFullMatch.add(new SongAndMatching(score,allSongsList.get(i)));
+
+			}
+			if(score!=0){
+				songWithMatching.add(new SongAndMatching(score,allSongsList.get(i)));
+			}
+		}
+		if(songWithMatchingFullMatch.size()!=0){
+			songWithMatching=songWithMatchingFullMatch;
+		}
+		Collections.sort(songWithMatching, new Comparator<SongAndMatching>() {
+			@Override
+			public int compare(SongAndMatching  a, SongAndMatching  b)
+			{
+
+				if(a.matching==b.matching){
+					return 0;
+				}
+				else if(a.matching<b.matching){
+					return -1;
+				}
+				else {
+					return 1;
+				}
+
+
+			}
+		});
+		songList= new ArrayList<Song>();
+		for(int i=0;i<songWithMatching.size();i++){
+//			System.out.println(songWithMatching.get(i).song.toString());
+//			System.out.println(songWithMatching.get(i).matching);
+			songList.add(songWithMatching.get(i).song);
+		}
+		Collections.reverse(songList);
+		ArrayAdapter<Song> adapter= new ArrayAdapter<Song>(this,android.R.layout.simple_list_item_1,songList);
+		listView.setAdapter(adapter);
+		listView.setOnItemClickListener(new OnItemClickListener() {
+
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				Song clickedSong=songList.get(position);
+				Intent intent = new Intent(view.getContext(), SongPane.class);
+				intent.putExtra("Song", clickedSong);
+				startActivity(intent);
+			}
+		}); 
+
+
+
 	}
 	private void populateSongListFromFile(){
 		songList = new ArrayList<Song>();
+		allSongsList= new ArrayList<Song>();
 		ArrayList<String> titleList= new ArrayList<String>();
 		ArrayList<String> melodyList= new ArrayList<String>();
 		ArrayList<String> lyricList= new ArrayList<String>();
@@ -146,10 +292,11 @@ public class MainActivity extends Activity {
 		}
 		for(int i=0;i<titleList.size();i++){
 			songList.add(new Song(titleList.get(i),melodyList.get(i),lyricList.get(i)));
+			allSongsList.add(new Song(titleList.get(i),melodyList.get(i),lyricList.get(i)));
 		}
 		populateListView();
 
-		
+
 	}
 
 	private void populateListView(){
@@ -157,14 +304,17 @@ public class MainActivity extends Activity {
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-              Song clickedSong=songList.get(position);
-              Intent intent = new Intent(view.getContext(), SongPane.class);
-              intent.putExtra("song", clickedSong);
-              startActivity(intent);
-            }
-    }); 
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				Song clickedSong=songList.get(position);
+				Intent intent = new Intent(view.getContext(), SongPane.class);
+				intent.putExtra("Song", clickedSong);
+				startActivity(intent);
+			}
+		}); 
 	}
+
+
+
 	private void downloadSongs(){
 		if(isNetworkAvailable()){
 			downloadListener = new DownloadListener(existingSongs,this);

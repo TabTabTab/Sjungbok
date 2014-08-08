@@ -3,6 +3,7 @@ package com.example.sjungbok;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
+import android.text.Html;
 import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.widget.ListView;
@@ -16,9 +17,11 @@ public class SongPane extends Activity {
 		setContentView(R.layout.activity_song_pane);
 		Intent intent = getIntent();
 		textView = (TextView)findViewById(R.id.songTextView);
-		Song song=(Song) intent.getSerializableExtra("song");
-		textView.setText(song.songToString());
-		//textView.setMovementMethod(new ScrollingMovementMethod());
+		Song song=(Song) intent.getParcelableExtra("Song");
+		textView.setText(Html.fromHtml(song.songToString()));
+		textView.scrollTo(0, textView.getTop());
+//		textView.setText(song.songToString());
+	
 	}
 
 	@Override
